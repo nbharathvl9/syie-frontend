@@ -1,24 +1,24 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/axios';
-import Cookies from 'js-cookie';
+import { useAuth } from '@/hooks/useAuth';
+import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({ rollNumber: "", fullName: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { login } = useAuth();
 
     const handleRegister = async (e) => {
         e.preventDefault();
         setError(""); // Clear previous errors
         setLoading(true);
         try {
-            const res = await api.post('/auth/register', formData);
+            const res = await authApi.register(formData);
             // Auto-login: Store auth cookies same as login flow
-            Cookies.set('token', res.data.token, { expires: 7, sameSite: 'lax', path: '/' });
-            Cookies.set('user_data', JSON.stringify(res.data), { expires: 7, sameSite: 'lax', path: '/' });
+            login(res.data);
             router.push('/feed');
         } catch (err) {
             setError(err.response?.data?.msg || "Error creating account");

@@ -1,10 +1,11 @@
 "use client";
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import Cookies from 'js-cookie';
+import { useAuth } from '@/hooks/useAuth';
+import { statsApi } from '@/lib/api';
 
 export default function LandingPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isLoggedIn } = useAuth();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPlaced: 0,
@@ -13,15 +14,10 @@ export default function LandingPage() {
   });
 
   useEffect(() => {
-    const token = Cookies.get('token');
-    setIsAuthenticated(!!token);
-
-    // Fetch stats
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/stats');
-        const data = await res.json();
-        setStats(data);
+        const res = await statsApi.get();
+        setStats(res.data);
       } catch (err) {
         console.error('Error fetching stats:', err);
       }
@@ -40,7 +36,7 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col gap-4 max-w-sm mx-auto">
-          {isAuthenticated ? (
+          {isLoggedIn ? (
             <>
               <Link href="/feed" className="bg-black text-white py-4 rounded-full font-bold text-sm tracking-widest hover:bg-gray-800 transition-all active:scale-95">
                 GO TO FEED

@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import api from '@/lib/axios';
-import Comments from '@/components/Comments';
-import { MessageCircle } from 'lucide-react';
-import { formatPostTime } from '@/lib/timeUtils';
+import { postApi } from '@/lib/api';
+import PostCard from '@/components/PostCard';
+import NotificationModal from '@/components/NotificationModal';
+import { useAuth } from '@/hooks/useAuth';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function Feed() {
   const [posts, setPosts] = useState([]);
@@ -12,28 +12,16 @@ export default function Feed() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [activeCommentId, setActiveCommentId] = useState(null);
+  const { user } = useAuth();
+  const { notification, showError, dismiss } = useNotification();
 
-  useEffect(() => {
-    setPosts([]);
-    setPage(1);
-    fetchPosts(1, search, true);
-
-    const delayDebounceFn = setTimeout(() => {
-      setPosts([]);
-      setPage(1);
-      fetchPosts(1, search, true);
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [search]);
-
-  const fetchPosts = async (pageNum, searchTerm, reset = false) => {
+  async function fetchPosts(pageNum, searchTerm, reset = false) {
     try {
-      let url = `/posts?page=${pageNum}`;
-      if (searchTerm) url += `&company=${searchTerm}`;
-      url += `&postType=Interview`;
-
-      const res = await api.get(url);
+      const res = await postApi.getAll({
+        page: pageNum,
+        company: searchTerm || undefined,
+        postType: 'Interview',
+      });
 
       if (res.data.length < 10) setHasMore(false);
       else setHasMore(true);
@@ -43,23 +31,53 @@ export default function Feed() {
     } catch (err) {
       console.error("Error fetching posts:", err);
     }
-  };
+  }
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setPosts([]);
+      setPage(1);
+      fetchPosts(1, search, true);
+    }, search ? 300 : 0);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
 
   const toggleComments = (postId) => {
     setActiveCommentId(activeCommentId === postId ? null : postId);
   };
 
   const handleCommentsUpdate = (postId, updatedComments) => {
-    setPosts(posts.map(post =>
+    setPosts((prevPosts) => prevPosts.map(post =>
       post._id === postId ? { ...post, comments: updatedComments } : post
     ));
+  };
+
+  const handlePostReaction = async (postId, emoji) => {
+    if (!user) {
+      showError('Please login to react');
+      return;
+    }
+
+    try {
+      const res = await postApi.togglePostReaction(postId, {
+        emoji,
+        authorName: user.fullName,
+      });
+
+      setPosts((prevPosts) => prevPosts.map((post) =>
+        post._id === postId ? { ...post, ...res.data } : post
+      ));
+    } catch (err) {
+      showError(err.response?.data?.msg || 'Failed to react to post');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-black pt-20 pb-20">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
 
-        {/* Header Section - Matches Discussion Header */}
+        {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-2xl font-black tracking-tighter uppercase">Interview Archive</h1>
           <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">
@@ -67,7 +85,7 @@ export default function Feed() {
           </p>
         </div>
 
-        {/* Search Bar - Matches Discussion Input Box Style */}
+        {/* Search Bar */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8 relative group">
           <div className="absolute inset-y-0 left-0 pl-8 flex items-center pointer-events-none">
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,71 +118,20 @@ export default function Feed() {
           )}
 
           {posts.map((post) => (
-            <div key={post._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-
-              {/* Card Header: Author & Metadata */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-3">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-sm font-bold border border-gray-100">
-                    {post.authorName?.[0] || "U"}
-                  </div>
-
-                  <div>
-                    <Link href={`/student/${post.authorRoll}`} className="block text-sm font-bold hover:underline decoration-1 underline-offset-2">
-                      {post.authorName}
-                    </Link>
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                      <span>{formatPostTime(post.createdAt)}</span>
-                      {post.authorPlacement?.isPlaced && (
-                        <>
-                          <span>•</span>
-                          <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
-                            Placed @ {post.authorPlacement.placedCompany}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Content */}
-              <div className="mb-4">
-                <h3 className="text-lg font-black tracking-tight uppercase mb-2 text-gray-900">
-                  {post.companyName}
-                </h3>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {post.experience}
-                </p>
-              </div>
-
-              {/* Card Footer: Actions (Matches Discussion Button Style) */}
-              <div>
-                <button
-                  onClick={() => toggleComments(post._id)}
-                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors"
-                >
-                  <MessageCircle size={14} className={activeCommentId === post._id ? "text-black" : "text-gray-400"} />
-                  {activeCommentId === post._id ? 'Hide Comments' : `Comments (${post.comments?.length || 0})`}
-                </button>
-              </div>
-
-              {/* Comments Section */}
-              {activeCommentId === post._id && (
-                <div className="mt-4 pt-4 border-t border-gray-50">
-                  <Comments
-                    postId={post._id}
-                    comments={post.comments}
-                    onCommentsUpdate={(updatedComments) => handleCommentsUpdate(post._id, updatedComments)}
-                  />
-                </div>
-              )}
-            </div>
+            <PostCard
+              key={post._id}
+              post={post}
+              currentUserRoll={user?.rollNumber}
+              onReaction={handlePostReaction}
+              showComments={activeCommentId === post._id}
+              onToggleComments={toggleComments}
+              onCommentsUpdate={handleCommentsUpdate}
+              variant="interview"
+            />
           ))}
         </div>
 
-        {/* Load More Button - Styled to match the clean aesthetic */}
+        {/* Load More Button */}
         {hasMore && posts.length > 0 && (
           <div className="mt-12 text-center">
             <button
@@ -179,6 +146,8 @@ export default function Feed() {
             </button>
           </div>
         )}
+
+        <NotificationModal {...notification} onDismiss={dismiss} />
       </div>
     </div>
   );

@@ -1,24 +1,24 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
+import { useAuth } from "@/hooks/useAuth";
+import { authApi } from "@/lib/api";
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({ rollNumber: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { login } = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError(""); // Clear previous errors
         setLoading(true);
         try {
-            const res = await api.post('/auth/login', formData);
-            Cookies.set('token', res.data.token, { expires: 7, sameSite: 'lax', path: '/' });
-            Cookies.set('user_data', JSON.stringify(res.data), { expires: 7, sameSite: 'lax', path: '/' });
+            const res = await authApi.login(formData);
+            login(res.data);
             router.push('/feed');
         } catch (err) {
             setError(err.response?.data?.msg || "Authentication failed");
