@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import MarkdownContent from '@/components/MarkdownContent';
 import ReactionBar from '@/components/ReactionBar';
 import Comments from '@/components/Comments';
 import { formatPostTime } from '@/lib/timeUtils';
@@ -63,9 +64,7 @@ export default function PostCard({
             {post.companyName}
           </h3>
         )}
-        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-          {post.experience}
-        </p>
+        <MarkdownContent content={post.experience} />
       </div>
 
       {/* Card Footer: Reactions & Comment Toggle */}

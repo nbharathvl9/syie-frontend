@@ -67,4 +67,11 @@ export const statsApi = {
 
 export const userApi = {
   search: (id) => api.get(`/users/search/${id}`),
+  suggest: (q) => api.get(`/users/suggest?q=${encodeURIComponent(q)}`),
+};
+
+// ─── AI API ─────────────────────────────────────────────────
+
+export const aiApi = {
+  rephrase: (text) => api.post('/ai/rephrase', { text }),
 };

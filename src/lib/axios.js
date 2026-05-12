@@ -18,12 +18,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Public routes that should NEVER trigger an auto-logout on 401
+const PUBLIC_ROUTES = ['/users/suggest', '/users/search', '/auth/user/', '/stats', '/posts'];
+
 // Global response interceptor for error normalization
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Auto-clear auth on 401 (expired / invalid token)
-    if (error.response?.status === 401) {
+    // Skip auto-logout for public endpoints to avoid false logouts
+    const requestUrl = error.config?.url || '';
+    const isPublicRoute = PUBLIC_ROUTES.some((route) => requestUrl.includes(route));
+
+    if (error.response?.status === 401 && !isPublicRoute) {
       Cookies.remove('token');
       Cookies.remove('user_data');
 

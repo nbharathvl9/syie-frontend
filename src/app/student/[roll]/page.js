@@ -7,6 +7,7 @@ import { useNotification } from '@/hooks/useNotification';
 import { postApi, authApi } from '@/lib/api';
 import NotificationModal from '@/components/NotificationModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import MarkdownContent from '@/components/MarkdownContent';
 import { formatPostTime } from '@/lib/timeUtils';
 
 export default function StudentProfile() {
@@ -142,7 +143,7 @@ export default function StudentProfile() {
                     <button onClick={cancelEdit} className="px-4 py-2 bg-gray-100 text-black rounded-lg text-xs font-bold hover:bg-gray-200">CANCEL</button>
                   </div>
                 </div>
-              ) : <p className="text-sm text-gray-600 leading-relaxed mb-4">{post.experience}</p>}
+              ) : <MarkdownContent content={post.experience} className="mb-4" />}
               <span className="text-[10px] font-bold text-gray-400">{formatPostTime(post.createdAt)}</span>
             </div>
           ))}

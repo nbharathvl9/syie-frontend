@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ─── Shared easing tokens ─── */
+  --ease-spring:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce:  cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @theme inline {
@@ -12,46 +17,136 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Custom Modal Animations */
+/* ════════════════════════════════════════
+   ANIMATION SYSTEM
+   ════════════════════════════════════════ */
+
+/* Backdrop fade */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
+/* Modal card — slides up with a slight scale pop */
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
 }
+
+/* Dropdown — slides down from above */
+@keyframes slideDown {
+  from { transform: translateY(-10px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);    opacity: 1; }
+}
+
+/* Compact scale-in for chips, badges */
+@keyframes scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Search bar width expand */
+@keyframes expandWidth {
+  from { width: 0; opacity: 0; }
+  to   { width: 100%; opacity: 1; }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+
+/* ─── Utility classes ─── */
 
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.2s var(--ease-spring) both;
 }
 
 .animate-slideUp {
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.28s var(--ease-spring) both;
 }
+
+.animate-slideDown {
+  animation: slideDown 0.24s var(--ease-spring) both;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.18s var(--ease-bounce) both;
+}
+
+/* ─── Interaction micro-feedback ─── */
+
+/* Any element with this class gets a satisfying press feel */
+.press-effect {
+  transition: transform 0.12s var(--ease-smooth),
+              opacity   0.12s var(--ease-smooth),
+              background-color 0.15s var(--ease-smooth);
+}
+.press-effect:active {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+/* Pill buttons (Logout, Login, etc.) */
+.btn-pill {
+  transition: transform 0.12s var(--ease-spring),
+              background-color 0.18s var(--ease-smooth),
+              box-shadow 0.18s var(--ease-smooth);
+}
+.btn-pill:hover  { box-shadow: 0 2px 12px rgba(0,0,0,0.18); }
+.btn-pill:active { transform: scale(0.94); }
+
+/* Nav links */
+.nav-link {
+  position: relative;
+  transition: color 0.18s var(--ease-smooth);
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0;
+  width: 0; height: 2px;
+  background: #000;
+  transition: width 0.22s var(--ease-spring);
+  border-radius: 99px;
+}
+.nav-link:hover::after  { width: 100%; }
+.nav-link.active::after { width: 100%; }
+
+/* Suggestion row */
+.suggestion-row {
+  transition: background-color 0.12s var(--ease-smooth),
+              transform        0.1s  var(--ease-smooth);
+}
+.suggestion-row:hover  { background-color: #f9fafb; }
+.suggestion-row:active { transform: scale(0.985); background-color: #f3f4f6; }
+
+/* ─── Skeleton shimmer ─── */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e9eaec 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+
+/* ─── Smooth transitions for the search bar expand/collapse ─── */
+.search-bar-enter {
+  animation: expandWidth 0.22s var(--ease-spring) both;
+}
+
+/* ─── Scrollbar styling for dropdowns ─── */
+.dropdown-scroll::-webkit-scrollbar       { width: 4px; }
+.dropdown-scroll::-webkit-scrollbar-track { background: transparent; }
+.dropdown-scroll::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+.dropdown-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }

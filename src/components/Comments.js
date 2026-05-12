@@ -5,12 +5,14 @@ import { useNotification } from '@/hooks/useNotification';
 import { postApi } from '@/lib/api';
 import ReactionBar from '@/components/ReactionBar';
 import NotificationModal from '@/components/NotificationModal';
+import ConfirmModal from '@/components/ConfirmModal';
 import { formatPostTime } from '@/lib/timeUtils';
 
 export default function Comments({ postId, comments: initialComments, onCommentsUpdate }) {
     const [newComment, setNewComment] = useState("");
     const [activeReplyId, setActiveReplyId] = useState(null);
     const [replyDrafts, setReplyDrafts] = useState({});
+    const [deleteModalState, setDeleteModalState] = useState({ show: false, commentId: null, replyId: null });
     const { user, isLoggedIn } = useAuth();
     const { notification, showError, dismiss } = useNotification();
 
@@ -37,11 +39,7 @@ export default function Comments({ postId, comments: initialComments, onComments
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (!confirm('Delete this comment?')) return;
-        try {
-            const res = await postApi.deleteComment(postId, commentId);
-            updateComments(res.data);
-        } catch (err) { showError(err.response?.data?.msg || 'Failed to delete comment'); }
+        setDeleteModalState({ show: true, commentId, replyId: null });
     };
 
     const toggleReplyEditor = (commentId) => {
@@ -62,11 +60,23 @@ export default function Comments({ postId, comments: initialComments, onComments
     };
 
     const handleDeleteReply = async (commentId, replyId) => {
-        if (!confirm('Delete this reply?')) return;
-        try {
-            const res = await postApi.deleteReply(postId, commentId, replyId);
-            updateComments(res.data);
-        } catch (err) { showError(err.response?.data?.msg || 'Failed to delete reply'); }
+        setDeleteModalState({ show: true, commentId, replyId });
+    };
+
+    const confirmDelete = async () => {
+        const { commentId, replyId } = deleteModalState;
+        setDeleteModalState({ show: false, commentId: null, replyId: null });
+        if (replyId) {
+            try {
+                const res = await postApi.deleteReply(postId, commentId, replyId);
+                updateComments(res.data);
+            } catch (err) { showError(err.response?.data?.msg || 'Failed to delete reply'); }
+        } else {
+            try {
+                const res = await postApi.deleteComment(postId, commentId);
+                updateComments(res.data);
+            } catch (err) { showError(err.response?.data?.msg || 'Failed to delete comment'); }
+        }
     };
 
     const handleCommentReaction = async (commentId, emoji) => {
@@ -158,6 +168,16 @@ export default function Comments({ postId, comments: initialComments, onComments
                     </div>
                 ))}
             </div>
+
+            <ConfirmModal
+                show={deleteModalState.show}
+                title={deleteModalState.replyId ? "Delete Reply?" : "Delete Comment?"}
+                message="This action cannot be undone. Are you sure you want to delete this?"
+                confirmLabel="Delete"
+                danger={true}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteModalState({ show: false, commentId: null, replyId: null })}
+            />
 
             <NotificationModal {...notification} onDismiss={dismiss} />
         </div>

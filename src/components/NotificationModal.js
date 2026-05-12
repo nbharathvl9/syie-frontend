@@ -15,11 +15,11 @@ export default function NotificationModal({ show, message, type, onDismiss }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn"
       onClick={onDismiss}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 transform animate-slideUp"
+        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
         <h3
@@ -32,7 +32,7 @@ export default function NotificationModal({ show, message, type, onDismiss }) {
         <p className="text-sm text-gray-600 mb-6">{message}</p>
         <button
           onClick={onDismiss}
-          className="w-full px-4 py-3 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all uppercase tracking-wide"
+          className="btn-pill press-effect w-full px-4 py-3 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 uppercase tracking-wide"
         >
           OK
         </button>
