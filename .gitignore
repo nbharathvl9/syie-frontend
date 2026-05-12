@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PWA — auto-generated workbox chunks (sw.js is hand-authored, DO commit it)
+/public/workbox-*.js
+/public/workbox-*.js.map
+/public/fallback-*.js
+/public/fallback-*.js.map
